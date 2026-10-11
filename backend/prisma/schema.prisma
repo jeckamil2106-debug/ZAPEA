@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum UserRole {
+  ADMIN
+  EMPRESA
+}
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+
+  role      UserRole @default(ADMIN)
+  isActive  Boolean  @default(true)
+
+  companies Company[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Sucursal {
+  id String @id @default(cuid())
+
+  nombre      String
+  direccion   String?
+  telefono    String?
+  whatsapp    String?
+  email       String?
+  horario     String?
+  latitud     Float?
+  longitud    Float?
+  activo      Boolean @default(true)
+
+  companyId String
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+ analyticsEvents AnalyticsEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, nombre])
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  nombres   String
+  apellidos String
+  telefono  String?
+  whatsapp  String?
+  email     String?
+  direccion String?
+  empresa   String?
+  cargo     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Company {
+  id          String  @id @default(cuid())
+  nombre      String
+  ruc         String?
+  telefono    String?
+  whatsapp    String?
+  facebook    String?
+  email       String?
+  direccion   String?
+  latitud     Float?
+  longitud    Float?
+  descripcion String?
+  categoria   String?
+
+ ownerId     String?
+owner       User?    @relation(fields: [ownerId], references: [id])
+  servicios    String[]  @default([])
+  serviceItems Service[]
+
+  logoUrl    String?
+  portadaUrl String?
+
+  gallery         GalleryImage[]
+  analyticsEvents AnalyticsEvent[]
+sucursales Sucursal[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  url       String
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  nombre      String
+  descripcion String?
+  precioDesde Float?
+  imagenUrl   String?
+  destacado   Boolean @default(true)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  images ServiceImage[]
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  AnalyticsEvent AnalyticsEvent[]
+
+  @@index([companyId])
+}
+
+model ServiceImage {
+  id  String @id @default(cuid())
+  url String
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
+}
+
+model AnalyticsEvent {
+  id String @id @default(cuid())
+
+  type String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  sucursalId String?
+  sucursal   Sucursal? @relation(fields: [sucursalId], references: [id], onDelete: Cascade)
+
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  visitorId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([companyId, type])
+  @@index([companyId, createdAt])
+  @@index([serviceId])
+  @@index([sucursalId])
+  @@index([sucursalId, type])
+  @@index([sucursalId, createdAt])
+}
